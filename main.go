@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"sync"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/gorilla/websocket"
 )
 
@@ -153,7 +154,6 @@ func (c *Client) writePump(DB *gorm.DB) {
 }
 
 func processMessage(message []byte) []byte {
-
 	var socketMessage request.SocketRequest
 
 	err := helper.ReadJSONFromByte(message, &socketMessage)
@@ -194,8 +194,9 @@ func main() {
 
 	log.Println("Database connection established")
 
-	http.HandleFunc("/iot/socket/channel", app.handleWebSocket)
-	
+	r := chi.NewRouter()
+	r.Get("/iot/socket/channel", app.handleWebSocket)
+
 	log.Println("Server started on :8080")
-	log.Fatal(http.ListenAndServe("0.0.0.0:8080", nil))
+	log.Fatal(http.ListenAndServe("0.0.0.0:8080", r))
 }
