@@ -1,0 +1,13 @@
+/.idea
+/config
+/db-data
+Makefile
+
+/log/
+.DS_Store
+*.xlsx
+*.xls
+*.exe
+/vscode/
+/db-data/
+coreApp
