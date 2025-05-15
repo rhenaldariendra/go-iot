@@ -9,5 +9,6 @@ Makefile
 *.xls
 *.exe
 /vscode/
+docker-compose.yml
 /db-data/
 coreApp
