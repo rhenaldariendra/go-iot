@@ -1,0 +1,16 @@
+DROP TABLE IF EXISTS user_sessions;
+DROP TABLE IF EXISTS type_flag;
+DROP TABLE IF EXISTS subscription_package_detail;
+DROP TABLE IF EXISTS subscription_packages;
+DROP TABLE IF EXISTS user_tokens;
+DROP TABLE IF EXISTS profiles;
+DROP TABLE IF EXISTS users;
+DROP TABLE IF EXISTS clinic_type;
+DROP TABLE IF EXISTS clinics;
+DROP TABLE IF EXISTS specialities;
+DROP TABLE IF EXISTS package_detail;
+DROP TABLE IF EXISTS packages;
+DROP TABLE IF EXISTS landing_email_temporary;
+DROP TABLE IF EXISTS mail_settings;
+DROP TABLE IF EXISTS mail_template;
+DROP TABLE IF EXISTS ppn_subscription;

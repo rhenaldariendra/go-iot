@@ -1,6 +1,11 @@
 package main
 
 import (
+	"Websocket_Service/data/request"
+	"Websocket_Service/helper"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 	"log"
 	"net/http"
 	"sync"
@@ -10,6 +15,10 @@ import (
 
 var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool { return true },
+}
+
+type MainApp struct {
+	DB *gorm.DB
 }
 
 // Client represents a connected WebSocket client
@@ -67,7 +76,7 @@ func (h *Hub) run() {
 	}
 }
 
-func handleWebSocket(w http.ResponseWriter, r *http.Request) {
+func (m *MainApp) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Println(err)
@@ -83,11 +92,11 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 
 	// Allow collection of memory referenced by the caller by doing all work in
 	// new goroutines.
-	go client.writePump()
-	go client.readPump()
+	go client.writePump(m.DB)
+	go client.readPump(m.DB)
 }
 
-func (c *Client) readPump() {
+func (c *Client) readPump(DB *gorm.DB) {
 	defer func() {
 		hub.unregister <- c
 		c.conn.Close()
@@ -110,7 +119,7 @@ func (c *Client) readPump() {
 	}
 }
 
-func (c *Client) writePump() {
+func (c *Client) writePump(DB *gorm.DB) {
 	defer func() {
 		c.conn.Close()
 	}()
@@ -144,15 +153,48 @@ func (c *Client) writePump() {
 }
 
 func processMessage(message []byte) []byte {
-	// Your processing logic here
-	// For example, you might prepend "Processed: " to the message
+
+	var socketMessage request.SocketRequest
+
+	err := helper.ReadJSONFromByte(message, &socketMessage)
+	if err != nil {
+		log.Printf("Error processing message: %v", err)
+		return []byte("Error processing message")
+	}
+
+	switch socketMessage.Type {
+
+	}
+
 	return append([]byte("Processed: "), message...)
 }
 
 func main() {
 	go hub.run()
 
-	http.HandleFunc("/iot/socket/channel", handleWebSocket)
+	dbConf := helper.ReadConfigDB()
+	dsn := "host=" + dbConf.DBHost +
+		" user=" + dbConf.DBUser +
+		" dbname=" + dbConf.DBName +
+		" password=" + dbConf.DBPassword +
+		" port=" + dbConf.DBPort +
+		" sslmode=disable TimeZone=UTC"
+
+	var err error
+	DB, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
+		Logger: logger.Default.LogMode(logger.Info),
+	})
+	if err != nil {
+		log.Fatalf("Failed to connect to database: %v", err)
+	}
+
+	app := &MainApp{
+		DB: DB,
+	}
+
+	log.Println("Database connection established")
+
+	http.HandleFunc("/iot/socket/channel", app.handleWebSocket)
 	log.Println("Server started on :8080")
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }

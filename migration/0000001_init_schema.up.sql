@@ -1,0 +1,15 @@
+CREATE TABLE "parking_slot" (
+    "id" SERIAL PRIMARY KEY,
+    "name" VARCHAR(50) NOT NULL,
+    "a1" INTEGER NOT NULL DEFAULT 0,
+    "a2" INTEGER NOT NULL DEFAULT 0,
+    "a3" INTEGER NOT NULL DEFAULT 0,
+    "a4" INTEGER NOT NULL DEFAULT 0,
+    "gate_in" BOOLEAN NOT NULL DEFAULT false
+);
+
+CREATE TABLE "booking_table" (
+    "id" SERIAL PRIMARY KEY,
+    "slot_id" INTEGER NOT NULL,
+    "user_id" VARCHAR(255) NOT NULL
+);

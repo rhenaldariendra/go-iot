@@ -15,23 +15,23 @@ services:
     networks:
       - app-network
 
-  iot-service:
-    container_name: iot-service
-    build:
-      context: ./
-      dockerfile: ./Dockerfile
-    ports:
-      - "8600:8081"
-    restart: always
-    environment:
-      TZ: Asia/Jakarta
-    volumes:
-      - /etc/localtime:/etc/localtime:ro
-      - /etc/timezone:/etc/timezone:ro
-    depends_on:
-      - db-iot
-    networks:
-      - app-network
+#  iot-service:
+#    container_name: iot-service
+#    build:
+#      context: ./
+#      dockerfile: ./Dockerfile
+#    ports:
+#      - "8600:8081"
+#    restart: always
+#    environment:
+#      TZ: Asia/Jakarta
+#    volumes:
+#      - /etc/localtime:/etc/localtime:ro
+#      - /etc/timezone:/etc/timezone:ro
+#    depends_on:
+#      - db-iot
+#    networks:
+#      - app-network
 
 networks:
   app-network:
