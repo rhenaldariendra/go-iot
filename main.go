@@ -116,10 +116,15 @@ func (c *Client) readPump(DB *gorm.DB) {
 		}
 
 		// Do some processing with the message
-		processedMessage := processMessage(message, DB)
+		processedMessage, isClient := processMessage(message, DB)
 
-		// Broadcast the processed message to all other clients
-		hub.broadcast <- processedMessage
+		if isClient == 0 {
+			// Broadcast the processed message to all other clients
+			hub.broadcast <- processedMessage
+		} else if isClient == 1 {
+			// send message back to the sender
+			err = c.conn.WriteMessage(websocket.TextMessage, processedMessage)
+		}
 	}
 }
 
@@ -172,13 +177,14 @@ func updateStatusParking(tx *gorm.DB, data model.ParkingSlotData, omitMessage st
 	return nil
 }
 
-func processMessage(message []byte, DB *gorm.DB) []byte {
+func processMessage(message []byte, DB *gorm.DB) ([]byte, int) {
 	var socketMessage request.SocketRequest
+	isClient := 0
 
 	err := helper.ReadJSONFromByte(message, &socketMessage)
 	if err != nil {
 		log.Printf("Error processing message: %v", err)
-		return []byte("Error processing message")
+		return []byte("Error processing message"), 0
 	}
 	nameParking := "PARKING_DEMO"
 	nameID := 1
@@ -308,11 +314,18 @@ func processMessage(message []byte, DB *gorm.DB) []byte {
 		jsonData, _ := json.Marshal(bookingRes)
 		message = jsonData
 	case "command":
+	case "init":
+		// Handle initialization
+		parkingData := model.ParkingSlotData{}
+		err = DB.Table("parking_slot").Where("name = ?", nameParking).First(&parkingData).Error
+		isClient = 1
 
+		jsonData, _ := json.Marshal(parkingData)
+		message = jsonData
 	case "gate_status":
 	}
 
-	return message
+	return message, isClient
 }
 
 func main() {
