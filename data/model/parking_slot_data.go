@@ -1,7 +1,7 @@
 package model
 
 type ParkingSlotData struct {
-	ID     int64  `gorm:"column:id" json:"_"`
+	ID     int64  `gorm:"column:id" json:"-"`
 	Name   string `gorm:"column:name" json:"-"`
 	A1     int    `gorm:"column:a1" json:"A1"`
 	A2     int    `gorm:"column:a2" json:"A2"`
