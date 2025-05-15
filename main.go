@@ -1,8 +1,11 @@
 package main
 
 import (
+	"Websocket_Service/data/model"
 	"Websocket_Service/data/request"
+	"Websocket_Service/data/webresponse"
 	"Websocket_Service/helper"
+	"encoding/json"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -113,7 +116,7 @@ func (c *Client) readPump(DB *gorm.DB) {
 		}
 
 		// Do some processing with the message
-		processedMessage := processMessage(message)
+		processedMessage := processMessage(message, DB)
 
 		// Broadcast the processed message to all other clients
 		hub.broadcast <- processedMessage
@@ -153,7 +156,23 @@ func (c *Client) writePump(DB *gorm.DB) {
 	}
 }
 
-func processMessage(message []byte) []byte {
+func addBooking(tx *gorm.DB, data model.BookingData) error {
+	err := tx.Omit("id").Save(&data).Error
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func updateStatusParking(tx *gorm.DB, data model.ParkingSlotData, omitMessage string) error {
+	err := tx.Omit(omitMessage).Save(data).Error
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func processMessage(message []byte, DB *gorm.DB) []byte {
 	var socketMessage request.SocketRequest
 
 	err := helper.ReadJSONFromByte(message, &socketMessage)
@@ -161,12 +180,139 @@ func processMessage(message []byte) []byte {
 		log.Printf("Error processing message: %v", err)
 		return []byte("Error processing message")
 	}
+	nameParking := "PARKING_DEMO"
+	nameID := 1
 
 	switch socketMessage.Type {
+	case "status_update":
+		omitMsg := "gate_in"
+		a1, _ := helper.StringToInt(socketMessage.Slots.A1)
+		if a1 == 404 {
+			omitMsg += ",a1"
+			a1 = 0
+		}
 
+		a2, _ := helper.StringToInt(socketMessage.Slots.A2)
+		if a2 == 404 {
+			omitMsg += ",a2"
+			a2 = 0
+		}
+
+		a3, _ := helper.StringToInt(socketMessage.Slots.A3)
+		if a3 == 404 {
+			omitMsg += ",a3"
+			a3 = 0
+		}
+
+		a4, _ := helper.StringToInt(socketMessage.Slots.A4)
+		if a4 == 404 {
+			omitMsg += ",a4"
+			a4 = 0
+		}
+
+		data := model.ParkingSlotData{
+			ID:   int64(nameID),
+			Name: nameParking,
+			A1:   a1,
+			A2:   a2,
+			A3:   a3,
+			A4:   a4,
+		}
+
+		err = updateStatusParking(DB, data, omitMsg)
+
+		jsonData, _ := json.Marshal(data)
+
+		message = jsonData
+	case "book_request":
+		// Handle booking request
+		bookData := model.BookingData{
+			SlotID: socketMessage.Slot,
+			UserID: socketMessage.User,
+		}
+
+		err = addBooking(DB, bookData)
+
+		omitMsg := "gate_in"
+		data := model.ParkingSlotData{}
+		bookingRes := webresponse.BookingResponse{}
+		switch socketMessage.Slot {
+		case "A1":
+			omitMsg += ",a2,a3,a4"
+			data = model.ParkingSlotData{
+				ID:     int64(nameID),
+				Name:   nameParking,
+				A1:     2,
+				A2:     0,
+				A3:     0,
+				A4:     0,
+				GateIn: false,
+			}
+			bookingRes = webresponse.BookingResponse{
+				Type:   "command",
+				Action: "book_slot",
+				Slot:   "A1",
+			}
+		case "A2":
+			omitMsg += ",a1,a3,a4"
+			data = model.ParkingSlotData{
+				ID:     int64(nameID),
+				Name:   nameParking,
+				A1:     0,
+				A2:     2,
+				A3:     0,
+				A4:     0,
+				GateIn: false,
+			}
+			bookingRes = webresponse.BookingResponse{
+				Type:   "command",
+				Action: "book_slot",
+				Slot:   "A2",
+			}
+		case "A3":
+			omitMsg += ",a1,a2,a4"
+			data = model.ParkingSlotData{
+				ID:     int64(nameID),
+				Name:   nameParking,
+				A1:     0,
+				A2:     0,
+				A3:     2,
+				A4:     0,
+				GateIn: false,
+			}
+			bookingRes = webresponse.BookingResponse{
+				Type:   "command",
+				Action: "book_slot",
+				Slot:   "A3",
+			}
+
+		case "A4":
+			omitMsg += ",a1,a2,a3"
+			data = model.ParkingSlotData{
+				ID:     int64(nameID),
+				Name:   nameParking,
+				A1:     0,
+				A2:     0,
+				A3:     0,
+				A4:     2,
+				GateIn: false,
+			}
+			bookingRes = webresponse.BookingResponse{
+				Type:   "command",
+				Action: "book_slot",
+				Slot:   "A4",
+			}
+
+		}
+		err = updateStatusParking(DB, data, omitMsg)
+		jsonData, _ := json.Marshal(bookingRes)
+		message = jsonData
+	case "command":
+
+	case "gate_status":
 	}
 
-	return append([]byte("Processed: "), message...)
+	return message
 }
 
 func main() {
@@ -197,6 +343,12 @@ func main() {
 	r := chi.NewRouter()
 	r.Get("/iot/socket/channel", app.handleWebSocket)
 
+	srv := &http.Server{
+		Addr:    ":8080",
+		Handler: r,
+	}
+
 	log.Println("Server started on :8080")
-	log.Fatal(http.ListenAndServe("0.0.0.0:8080", r))
+	log.Fatal(srv.ListenAndServe())
+
 }

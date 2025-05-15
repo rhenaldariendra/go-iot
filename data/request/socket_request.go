@@ -8,5 +8,5 @@ type SocketRequest struct {
 	// For Frontend
 	Slot string `json:"slot"`
 	// For ESP32
-	Slots []SlotRequest `json:"slots"`
+	Slots SlotRequest `json:"slots"`
 }

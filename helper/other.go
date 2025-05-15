@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"github.com/google/uuid"
+	"strconv"
 	"time"
 )
 
@@ -22,4 +23,11 @@ func GenerateToken(length int) (string, error) {
 		return "", err
 	}
 	return hex.EncodeToString(bytes), nil
+}
+
+func StringToInt(s string) (int, error) {
+	if s == "" {
+		return 404, nil
+	}
+	return strconv.Atoi(s)
 }
