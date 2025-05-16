@@ -181,6 +181,7 @@ func updateStatusParking(tx *gorm.DB, data model.ParkingSlotData, omitMessage st
 func processMessage(message []byte, DB *gorm.DB) ([]byte, int) {
 	var socketMessage request.SocketRequest
 	isClient := 0
+	log.Println("request: ", string(message))
 
 	err := helper.ReadJSONFromByte(message, &socketMessage)
 	if err != nil {
