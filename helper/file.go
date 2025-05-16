@@ -1,6 +1,8 @@
 package helper
 
 import (
+	"encoding/base64"
+	"errors"
 	"io"
 	"log"
 	"os"
@@ -38,5 +40,30 @@ func CreateDirectory(path string) error {
 	if err != nil {
 		return err
 	}
+	return nil
+}
+
+func ConvertBase64ToBytes(base64Str string) ([]byte, error) {
+	data, err := base64.StdEncoding.DecodeString(base64Str)
+	if err != nil {
+		return nil, errors.New("failed to decode base64 string: " + err.Error())
+	}
+	return data, nil
+}
+
+func SaveBytesToFile(data []byte, filepath string) error {
+	// Create the file
+	file, err := os.Create(filepath)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	// Write the byte data to the file
+	err = os.WriteFile(filepath, data, os.ModePerm)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }

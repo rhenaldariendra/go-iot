@@ -9,4 +9,5 @@ type SocketRequest struct {
 	Slot string `json:"slot"`
 	// For ESP32
 	Slots SlotRequest `json:"slots"`
+	Image string      `json:"image"`
 }

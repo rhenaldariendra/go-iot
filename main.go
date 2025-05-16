@@ -12,6 +12,7 @@ import (
 	"log"
 	"net/http"
 	"sync"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/gorilla/websocket"
@@ -183,8 +184,8 @@ func processMessage(message []byte, DB *gorm.DB) ([]byte, int) {
 
 	err := helper.ReadJSONFromByte(message, &socketMessage)
 	if err != nil {
-		log.Printf("Error processing message: %v", err)
-		return []byte("Error processing message"), 0
+		log.Printf("Error Message Not Valid: %v", err)
+		return []byte("Error Message Not Valid"), 0
 	}
 	nameParking := "PARKING_DEMO"
 	nameID := 1
@@ -323,6 +324,28 @@ func processMessage(message []byte, DB *gorm.DB) ([]byte, int) {
 		jsonData, _ := json.Marshal(parkingData)
 		message = jsonData
 	case "gate_status":
+	case "image_upload":
+		// Handle image upload
+		// Convert base64 string to byte array and save to file
+		data, err := helper.ConvertBase64ToBytes(socketMessage.Image)
+		filePath := "assets/" + socketMessage.User + time.Now().Format("150405") + ".jpg"
+		err = helper.SaveBytesToFile(data, filePath)
+		if err != nil {
+			log.Printf("Error saving file: %v", err)
+			return []byte("Error saving file"), 0
+		}
+		isClient = 404
+	case "ping":
+		// Handle ping
+		jsonData, _ := json.Marshal(map[string]interface{}{
+			"nama":      "tio novriadi putra",
+			"status":    "single",
+			"mantan":    "naura",
+			"isBalikan": "yes",
+		})
+		isClient = 1
+		message = jsonData
+
 	}
 
 	return message, isClient
