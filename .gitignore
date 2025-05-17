@@ -1,6 +1,7 @@
 /.idea
 /config
 /db-data
+/assets
 Makefile
 
 /log/

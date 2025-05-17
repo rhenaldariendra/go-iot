@@ -10,6 +10,6 @@ CREATE TABLE "parking_slot" (
 
 CREATE TABLE "booking_table" (
     "id" SERIAL PRIMARY KEY,
-    "slot_id" INTEGER NOT NULL,
+    "slot_id" VARCHAR(50) NOT NULL,
     "user_id" VARCHAR(255) NOT NULL
 );
